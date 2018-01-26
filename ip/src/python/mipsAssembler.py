@@ -49,5 +49,7 @@ mips_dict["swag"][2] = mips_dict["swag"][2].replace('0b','')
 
 dict = {
         "add": "opcode" + "r1" + "r2" + "r3" +"s" +"f"}
+        
+        
 
 
