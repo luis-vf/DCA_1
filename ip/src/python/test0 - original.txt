@@ -11,13 +11,15 @@ ori $5, $5, 0xf0e1
 sub $7, $0, $6
 add $1, $1, $6
 ori $8, $2, 0x0800
+toggle:
 nor $9, $4, $5
-beq $4, $5, 0x0800
+beq $4, $5, end
 srl $10, $2, 1
 srl $11, $2, 16
 sll $12, $8, 4
 sll $13, $8, 20
 subu $8, $8, $10
+dest:
 sltiu $24, $11, 0x7fff
 slt $9, $10, $12
 sltu $16, $10, $12
@@ -29,9 +31,14 @@ sw $4, 0x0000($8)
 sw $5, 0x0004($8)
 sll $10, $10, 1
 srl $13, $13, 16
-bne $9, $14, 0x0808
+bne $9, $14, dest
 addiu $11, $11, 0x0808
 addiu $8, $8, 0x0001
+jal part
+j toggle
+end:
+j end
+part:
 lw $18, -1($8)
 lw $19, 3($8)
 addu $9, $8, $1
@@ -55,4 +62,7 @@ sb $22, 12($9)
 sb $23, 13($9)
 sb $24, 14($9)
 sb $25, 15($9)
-beq $4, $5, 0x0808
+beq $4, $5, back
+jr $30
+back:
+jr $31
