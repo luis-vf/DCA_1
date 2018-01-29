@@ -37,7 +37,7 @@ addiu $8, $8, 0x0001
 jal part
 j toggle
 end:
-j end
+j back
 part:
 lw $18, -1($8)
 lw $19, 3($8)

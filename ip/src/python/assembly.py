@@ -5,7 +5,7 @@ Created on Thu Jan 25 23:51:26 2018
 @author: Luis
 """
 
-asm = open("test0 - original.txt","r")
+asm = open("test1.txt","r")
 
 a = asm.readlines()
 
@@ -23,9 +23,9 @@ mips_dict = {
     "nor": ["100111","$rd","$rs","$rt"],
     "slt": ["101010","$rd","$rs","$rt"],
     "sltu": ["101011","$rd","$rs","$rt"],
-    "sll": ["000000","$rd","$rs","shamt"],
-    "srl": ["000010","$rd","$rs","shamt"],
-    "sra": ["000011","$rd","$rs","shamt"],
+    "sll": ["000000","$rd","$rt","shamt"],
+    "srl": ["000010","$rd","$rt","shamt"],
+    "sra": ["000011","$rd","$rt","shamt"],
     "sllv": ["000100","$rd","$rs","$rt"],
     "srlv": ["000110","$rd","$rs","$rt"],
     "srav": ["000111","$rd","$rs","$rt"],
@@ -80,7 +80,8 @@ mips_dict = {
 
 mips_isa = ["bltz","bgez","bltzal","bgezal","add","addu","sub","subu","and","or","xor","nor","slt","sltu","sll","srl","sra","sllv","srlv",
     "srav","jalr","mult","multu","mfhi","mflo","mthi","mtlo","jr","j","jal","beq","bne","blez""bgtz","addi" ,"andi" , "addiu" , "slti" ,
-    "sltiu" ,"ori" ,"xori" ,"lw" ,"lwl" ,"lwr" ,"lh" ,"lui","lbu" ,"lhu" ,"lb" ,"sb" ,"sh" ,"sw"]
+    "sltiu" ,"ori" ,"xori" ,"lw" ,"lwl" ,"lwr" ,"lh" ,"lui","lbu" ,"lhu" ,"lb" ,"sb" ,"sh" ,"sw","j","jal"]
+
 ri_list = ["bltz","bgez","bltzal","bgezal"]
 
 r_list = ["add","addu","sub","subu","and","or","xor","nor","slt","sltu","sll","srl","sra","sllv","srlv",
@@ -92,8 +93,8 @@ i_list = ["beq","bne","blez""bgtz","addi" ,"andi" , "addiu" , "slti" ,"sltiu" ,"
 "lw" ,"lwl" ,"lwr" ,"lh" ,"lui","lbu" ,"lhu" ,"lb" ,"sb" ,"sh" ,"sw"]
 
 
-asm_dict = {}
 labels_dict = {}
+output_dict = {}
 
 r_type =['000000','sssss','ttttt','ddddd','mmmmm','ffffff']
 ri_type = ['000001', 'sssss', 'RRRRR', 'CCCCCCCCCCCCCCCC']
@@ -113,11 +114,13 @@ def regnum_tob(reg):
     return reg
     
 def addr_tob(addr):
-    if('-' in addr):
-        b = bin(int(addr) & 0b1111111111111111).replace('0b','')
-    else:
-        b = bin((int(addr, 16))).replace('0b','').zfill(16)
-    return b
+    if('-' in str(addr)):
+        c = bin(int(addr) & 0b1111111111111111).replace('0b','')
+    elif('0x' not in str(addr)):
+        c = bin(int(addr) & 0b1111111111111111).replace('0b','').zfill(16)
+    elif('0x' in str(addr)):
+        c = bin((int(addr,16))).replace('0b','').zfill(16)
+    return c
 
 def jaddr_tob(addr):
     b = bin((int(addr, 16))).replace('0b','').zfill(26)
@@ -128,7 +131,7 @@ def jaddr_tob(addr):
 def makeasm_dict():
     """creates a dictionary from assembly text files"""
     for x in range(len(a)):
-        asm_dict[x] = str.split(a[x].replace('\n','').replace(',','').replace('(',' ').replace(')',' '))
+        asm_dict2[x] = str.split(a[x].replace('\n','').replace(',','').replace('(',' ').replace(')',' '))
         
 def check_isa(line):
     """returns a boolean to see if the assembly instruction is in the list of instructions"""
@@ -164,9 +167,14 @@ def itype_out(line):
     output[2] = '00000' #t
     output[3] = '0000000000000000' #imm
     output[0] = mips_dict[asm_dict[line][0]][0]#puts in opcode
+    
+    if(len(asm_dict[line]) > 3):
+        if(asm_dict[line][3] in labels_dict.keys()):
+                asm_dict[line][3] = int(labels_dict[asm_dict[line][3]],16) - int('0x00400000',16) - int(line) -1
+            
     for i in range(len(mips_dict[asm_dict[line][0]])-1):
         if mips_dict[asm_dict[line][0]][i+1] == '$rs':
-            #output
+            #output 
             output[1] = regnum_tob(asm_dict[line][i+1])
         elif mips_dict[asm_dict[line][0]][i+1] == '$rt':
             output[2] = regnum_tob(asm_dict[line][i+1])
@@ -187,7 +195,10 @@ def ritype_out(line):
             #output
             output[1] = regnum_tob(asm_dict[line][i+1])
         elif mips_dict[asm_dict[line][0]][i+1] == 'imm':
-            output[3] = addr_tob(asm_dict[line][i+1])
+            if(asm_dict[line][i] in labels_dict.keys()):
+                asm_dict[line][i] = int(labels_dict[asm_dict[line][3]],16) - int('0x00400000',16) - int(line)
+            else:
+                output[3] = addr_tob(asm_dict[line][i+1])
     return output
  
 def jtype_out(line):
@@ -195,7 +206,10 @@ def jtype_out(line):
     output = j_type
     #j_type = ['EEEEEE','AAAAAAAAAAAAAAAAAAAAAAAAAA']
     output[0] = mips_dict[asm_dict[line][0]][0]
-    output[1] = jaddr_tob(asm_dict[line][1])
+    if asm_dict[line][1] in labels_dict.keys():
+        output[1] = bin(int(labels_dict[asm_dict[line][1]],16)>>2).replace('0b','').zfill(26)
+    else:
+        output[1] = jaddr_tob(asm_dict[line][1])
     return output
 
 global addr
@@ -212,75 +226,50 @@ def checktype(line):
     elif asm_dict[line][0] in j_list:
         return jtype_out(line)
 
-
+global index
+index = 0
+asm_dict = {}
+asm_dict2 = {}
 def labels():
         global addr
-        for i in range(len(asm_dict)):
-            if (asm_dict[i][0] in mips_isa):
-               addr = addr + 1
+        global index
+        for i in range(len(asm_dict2)):
+            if':' not in asm_dict2[i][0] :
+                asm_dict[index] = asm_dict2[i]
+                index +=1
+            if (asm_dict2[i][0] in mips_isa):
+                addr = addr + 1
             else:
-                labels_dict[asm_dict[i][0].replace(':','')] = '0x'+ hex(addr).replace('0x','').zfill(8)
-        return labels_dict
+                labels_dict[asm_dict2[i][0].replace(':','')] = '0x'+ hex(addr).replace('0x','').zfill(8)  
+        return labels_dict    
         
-        
-#checks to see if mips function is a key in dictionary
-#b = (asm_dict[0][0] in mips_dict.keys())
+
 makeasm_dict()
 labels()
-#print(check_isa(1))
-#print(regnum_tob('$21'))
-#print(addr_tob('0xffff'))
 for i in range(len(asm_dict)):
-    print(hex(int('0x00400000',16) + i) + '  :  '+''.join(asm_dict[i]))
-#output_dict = {}
-#for i in range(len(asm_dict)-1):
-#    output_dict[i] = ''.join(checktype(i))
-#
-#f = open('test0.mif','w')
-#
-#f.write(''+ '\n')
-#f.write('WIDTH=32;'+ '\n')
-#f.write('DEPTH=256;'+ '\n')
-#f.write(''+ '\n')
-#f.write('ADDRESS_RADIX=HEX;'+ '\n')
-##f.write('DATA_RADIX=BIN;'+ '\n')
-#f.write('DATA_RADIX=HEX;'+ '\n')
-#f.write(''+ '\n')
-#f.write('CONTENT BEGIN'+ '\n')
-#for i in range(len(output_dict)):
-#    #f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ output_dict[i] + ';'+ '\n') #binary output
-#    f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ 
-#            hex(int('0b'+ output_dict[i],2)).replace('0x','').upper().zfill(8) + ';'+ '\n') #to get hex output
-#    
-#f.write('   [' + '0x' + hex(int('0x00400000',16) + len(output_dict)).replace('0x','').zfill(8).upper()+'..'
-#             + hex(int('0x00400000',16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;'+ '\n')  
-#
-#f.write('END;'+ '\n')
-#
-#f.close()
- 
-"""print('')
-print('WIDTH = 32;')
-print('DEPTH = 256;')
-print('')
-print('ADDRESS_RADIX=HEX;')
-print('DATA_RADIX=BIN;')
-print('')
-print('CONTENT BEGIN')
+    output_dict[i] = ''.join(checktype(i))
+
+f = open('test0.mif','w')
+
+f.write(''+ '\n')
+f.write('WIDTH=32;'+ '\n')
+f.write('DEPTH=256;'+ '\n')
+f.write(''+ '\n')
+f.write('ADDRESS_RADIX=HEX;'+ '\n')
+#f.write('DATA_RADIX=BIN;'+ '\n')
+f.write('DATA_RADIX=HEX;'+ '\n')
+f.write(''+ '\n')
+f.write('CONTENT BEGIN'+ '\n')
 for i in range(len(output_dict)):
-    print('   '+hex(int('0x00400000',16) + i) +'   :   '+ output_dict[i] + ';')
-print('   [' + hex(int('0x00400000',16) + len(output_dict))+'..'+ hex(int('0x00400000',16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;')  
+    #f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ output_dict[i] + ';'+ '\n') #binary output
+    f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ 
+            hex(int('0b'+ output_dict[i],2)).replace('0x','').upper().zfill(8) + ';'+ '\n') #to get hex output
+    
+f.write('   [' + '0x' + hex(int('0x00400000',16) + len(output_dict)).replace('0x','').zfill(8).upper()+'..'
+             + hex(int('0x00400000',16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;'+ '\n')  
 
-print('END;')
-"""   
-#print(asm_dict[10])
-#print(len(''.join(rtype_out(10))))
-#print(mips_dict[asm_dict[line][0]][3])
-#R type 000000 sssss ttttt ddddd SSSSS ffffff
+f.write('END;'+ '\n')
 
-#RI type 000001 sssss RRRRR CCCCCCCCCCCCCCCC
+f.close()
 
-#I type EEEEEE sssss ttttt CCCCCCCCCCCCCCCC
-
-#j type EEEEEE AAAAAAAAAAAAAAAAAAAAAAAAAA
 
