@@ -5,7 +5,7 @@ Created on Thu Jan 25 23:51:26 2018
 @author: Luis
 """
 
-asm = open("test0 - original.txt","r")
+asm = open("test1.txt","r")
 
 a = asm.readlines()
 
@@ -94,6 +94,7 @@ i_list = ["beq","bne","blez""bgtz","addi" ,"andi" , "addiu" , "slti" ,"sltiu" ,"
 
 
 labels_dict = {}
+output_dict = {}
 
 r_type =['000000','sssss','ttttt','ddddd','mmmmm','ffffff']
 ri_type = ['000001', 'sssss', 'RRRRR', 'CCCCCCCCCCCCCCCC']
@@ -206,7 +207,7 @@ def jtype_out(line):
     #j_type = ['EEEEEE','AAAAAAAAAAAAAAAAAAAAAAAAAA']
     output[0] = mips_dict[asm_dict[line][0]][0]
     if asm_dict[line][1] in labels_dict.keys():
-        output[1] = bin(int(labels_dict[asm_dict[line][1]],16)-1).replace('0b','').zfill(26)
+        output[1] = bin(int(labels_dict[asm_dict[line][1]],16)-int(3145728)).replace('0b','').zfill(26)
     else:
         output[1] = jaddr_tob(asm_dict[line][1])
     return output
@@ -242,20 +243,9 @@ def labels():
                 labels_dict[asm_dict2[i][0].replace(':','')] = '0x'+ hex(addr).replace('0x','').zfill(8)  
         return labels_dict    
         
-#checks to see if mips function is a key in dictionary
-#b = (asm_dict[0][0] in mips_dict.keys())
+
 makeasm_dict()
 labels()
-z ='100101000001000010'.zfill(32)
-x ='10000000101000001000010'.zfill(32)
-print(z)
-print(x)
-#print(check_isa(1))
-#print(regnum_tob('$21'))
-#print(addr_tob('0xffff'))
-#for i in range(len(asm_dict)):
- #   print(hex(int('0x00400000',16) + i) + '  :  '+''.join(asm_dict[i]))
-output_dict = {}
 for i in range(len(asm_dict)):
     output_dict[i] = ''.join(checktype(i))
 
@@ -281,29 +271,5 @@ f.write('   [' + '0x' + hex(int('0x00400000',16) + len(output_dict)).replace('0x
 f.write('END;'+ '\n')
 
 f.close()
- 
-"""print('')
-print('WIDTH = 32;')
-print('DEPTH = 256;')
-print('')
-print('ADDRESS_RADIX=HEX;')
-print('DATA_RADIX=BIN;')
-print('')
-print('CONTENT BEGIN')
-for i in range(len(output_dict)):
-    print('   '+hex(int('0x00400000',16) + i) +'   :   '+ output_dict[i] + ';')
-print('   [' + hex(int('0x00400000',16) + len(output_dict))+'..'+ hex(int('0x00400000',16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;')  
 
-print('END;')
-"""   
-#print(asm_dict[10])
-#print(len(''.join(rtype_out(10))))
-#print(mips_dict[asm_dict[line][0]][3])
-#R type 000000 sssss ttttt ddddd SSSSS ffffff
-
-#RI type 000001 sssss RRRRR CCCCCCCCCCCCCCCC
-
-#I type EEEEEE sssss ttttt CCCCCCCCCCCCCCCC
-
-#j type EEEEEE AAAAAAAAAAAAAAAAAAAAAAAAAA
 
