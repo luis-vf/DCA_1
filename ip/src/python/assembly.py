@@ -9,7 +9,7 @@ asm = open("test1.txt","r")
 
 a = asm.readlines()
 
-
+start_addr = '0x00400000'
 
 mips_dict = {
     #standard rtype instructions
@@ -170,7 +170,7 @@ def itype_out(line):
     
     if(len(asm_dict[line]) > 3):
         if(asm_dict[line][3] in labels_dict.keys()):
-                asm_dict[line][3] = int(labels_dict[asm_dict[line][3]],16) - int('0x00400000',16) - int(line) -1
+                asm_dict[line][3] = int(labels_dict[asm_dict[line][3]],16) - int(start_addr,16) - int(line) -1
             
     for i in range(len(mips_dict[asm_dict[line][0]])-1):
         if mips_dict[asm_dict[line][0]][i+1] == '$rs':
@@ -196,7 +196,7 @@ def ritype_out(line):
             output[1] = regnum_tob(asm_dict[line][i+1])
         elif mips_dict[asm_dict[line][0]][i+1] == 'imm':
             if(asm_dict[line][i] in labels_dict.keys()):
-                asm_dict[line][i] = int(labels_dict[asm_dict[line][3]],16) - int('0x00400000',16) - int(line)
+                asm_dict[line][i] = int(labels_dict[asm_dict[line][3]],16) - int(start_addr,16) - int(line)
             else:
                 output[3] = addr_tob(asm_dict[line][i+1])
     return output
@@ -207,14 +207,14 @@ def jtype_out(line):
     #j_type = ['EEEEEE','AAAAAAAAAAAAAAAAAAAAAAAAAA']
     output[0] = mips_dict[asm_dict[line][0]][0]
     if asm_dict[line][1] in labels_dict.keys():
-        output[1] = bin(int(labels_dict[asm_dict[line][1]],16)>>2).replace('0b','').zfill(26)
+        output[1] = bin(int(labels_dict[asm_dict[line][1]],16)-int(start_addr,16)+(int(start_addr,16)>>2)).replace('0b','').zfill(26)
     else:
         output[1] = jaddr_tob(asm_dict[line][1])
     return output
 
 global addr
 
-addr = int('0x00400000',16)
+addr = int(start_addr,16)
     
 def checktype(line):
     if asm_dict[line][0] in ri_list :
@@ -249,7 +249,7 @@ labels()
 for i in range(len(asm_dict)):
     output_dict[i] = ''.join(checktype(i))
 
-f = open('test0.mif','w')
+f = open('test0l.mif','w')
 
 f.write(''+ '\n')
 f.write('WIDTH=32;'+ '\n')
@@ -261,12 +261,12 @@ f.write('DATA_RADIX=HEX;'+ '\n')
 f.write(''+ '\n')
 f.write('CONTENT BEGIN'+ '\n')
 for i in range(len(output_dict)):
-    #f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ output_dict[i] + ';'+ '\n') #binary output
-    f.write('   '+ '0x'+ hex(int('0x00400000',16) + i).replace('0x','').zfill(8).upper() +'   :   '+ 
+    #f.write('   '+ '0x'+ hex(int(start_addr,16) + i).replace('0x','').zfill(8).upper() +'   :   '+ output_dict[i] + ';'+ '\n') #binary output
+    f.write('   '+ '0x'+ hex(int(start_addr,16) + i).replace('0x','').zfill(8).upper() +'   :   '+ 
             hex(int('0b'+ output_dict[i],2)).replace('0x','').upper().zfill(8) + ';'+ '\n') #to get hex output
     
-f.write('   [' + '0x' + hex(int('0x00400000',16) + len(output_dict)).replace('0x','').zfill(8).upper()+'..'
-             + hex(int('0x00400000',16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;'+ '\n')  
+f.write('   [' + '0x' + hex(int(start_addr,16) + len(output_dict)).replace('0x','').zfill(8).upper()+'..'
+             + hex(int(start_addr,16) + 255) +']'+ '   :   '+ '00000000000000000000000000000000;'+ '\n')  
 
 f.write('END;'+ '\n')
 
