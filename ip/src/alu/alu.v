@@ -86,10 +86,10 @@ module alu #(
         4'h8: dataOutput_tmp <= data[0] >> shamt ; //shift right logical
         4'h9: dataOutput_tmp <= data[0] << shamt; //shift left logical
         4'ha: dataOutput_tmp <= $signed($signed(data[0]) >>> shamt); //shift right arithmetic
-        4'hb: dataOutput_tmp <= $signed($signed(data[0]) <<< shamt); //shift left logical
-        4'hc: dataOutput_tmp <= ((data[0] < 0)? 32'b1 : 32'b0); //check if less than zero
-        4'hd: dataOutput_tmp <= ((data[0] <= 0)? 32'b1 : 32'b0); //check if less than or equal zero
-        4'he: dataOutput_tmp <= ((data[0] >= 0)? 32'b1 : 32'b0); //check if greater than or equal zero
+        4'hb: dataOutput_tmp <= ((data[0] < 0)? 32'b1 : 32'b0); //check if less than zero
+        4'hc: dataOutput_tmp <= ((data[0] <= 0)? 32'b1 : 32'b0); //check if less than or equal zero
+        4'hd: dataOutput_tmp <= ((data[0] >= 0)? 32'b1 : 32'b0); //check if greater than or equal zero
+        4'he: dataOutput_tmp <= ((data[0] > 0)? 32'b1 : 32'b0); //check if greater than zero
         default: dataOutput_tmp <= 32'b0;
     endcase
 

@@ -114,24 +114,28 @@ initial begin
     ctrl <= 4'ha;
     $display("Alu opcode:%d     Input:%h    Shift:%d ",ctrl, dataIn,shamt);
     `DELAY(6)
-    //shift left logical
-    dataIn <= 64'h0000000CC0000001;
+
+    //check if less than zero
+    dataIn <= 64'h0000000000000000;
     ctrl <= 4'hb;
     $display("Alu opcode:%d     Input:%h    Shift:%d ",ctrl, dataIn,shamt);
     `DELAY(6)
 
-    //check if less than zero
+
+    //check if less than or equal zero
+    dataIn <= 64'h0000000000000000;
     ctrl <= 4'hc;
     $display("Alu opcode:%d     Input:%h    Shift:%d ",ctrl, dataIn,shamt);
     `DELAY(6)
 
-    //check if less than or equal zero
+
+    //check if greater than or equal zero
     dataIn <= 64'h0000000000000000;
     ctrl <= 4'hd;
     $display("Alu opcode:%d     Input:%h    Shift:%d ",ctrl, dataIn,shamt);
     `DELAY(6)
 
-    //check if greater than or equal zero
+    //check if greater than zero
     dataIn <= 64'h0000000000000001;
     ctrl <= 4'he;
     $display("Alu opcode:%d     Input:%h    Shift:%d ",ctrl, dataIn,shamt);
